@@ -21,10 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class VehicleService {
@@ -44,29 +41,19 @@ public class VehicleService {
                 dto
         );
 
-        if (request == null) {
-            LOG.error("Failed to build search request");
-            return Collections.emptyList();
-        }
-
-        try {
-            final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-
-            final SearchHit[] searchHits = response.getHits().getHits();
-            final List<Vehicle> vehicles = new ArrayList<>(searchHits.length);
-            for (SearchHit hit : searchHits) {
-                vehicles.add(
-                        MAPPER.readValue(hit.getSourceAsString(), Vehicle.class)
-                );
-            }
-            return vehicles;
-
-        } catch (final Exception e) {
-            LOG.error(e.getMessage(), e);
-            return Collections.emptyList();
-        }
+        return searchInternal(request);
     }
 
+
+    public List<Vehicle> getAllVehiclesCreatedSince(final Date date) {
+        final SearchRequest request = SearchUtil.buildSearchRequest(
+                Indices.VEHICLE_INDEX,
+                "created",
+                date
+        );
+
+        return searchInternal(request);
+    }
     public Boolean index(final Vehicle vehicle) {
         try {
             final String vehicleAsString = MAPPER.writeValueAsString(vehicle);
@@ -99,6 +86,30 @@ public class VehicleService {
         } catch (final Exception e) {
             LOG.error(e.getMessage(), e);
             return null;
+        }
+    }
+
+    private List<Vehicle> searchInternal(final SearchRequest request) {
+        if (request == null) {
+            LOG.error("Failed to build search request");
+            return Collections.emptyList();
+        }
+
+        try {
+            final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+
+            final SearchHit[] searchHits = response.getHits().getHits();
+            final List<Vehicle> vehicles = new ArrayList<>(searchHits.length);
+            for (SearchHit hit : searchHits) {
+                vehicles.add(
+                        MAPPER.readValue(hit.getSourceAsString(), Vehicle.class)
+                );
+            }
+
+            return vehicles;
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 }

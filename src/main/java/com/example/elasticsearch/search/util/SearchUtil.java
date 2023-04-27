@@ -8,6 +8,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Date;
 import java.util.List;
 
 public final class SearchUtil {
@@ -36,6 +37,22 @@ public final class SearchUtil {
         }
     }
 
+    public static SearchRequest buildSearchRequest(final String indexName,
+                                                   final String field,
+                                                   final Date date) {
+        try {
+            final SearchSourceBuilder builder = new SearchSourceBuilder()
+                    .postFilter(getQueryBuilder(field, date));
+
+            final SearchRequest request = new SearchRequest(indexName);
+            request.source(builder);
+
+            return request;
+        } catch (final Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
     public static QueryBuilder getQueryBuilder(final SearchRequestDTO dto) {
         if (dto == null) {
             return null;
@@ -60,5 +77,9 @@ public final class SearchUtil {
                         QueryBuilders.matchQuery(field, dto.getSearchTerm())
                                 .operator(Operator.AND))
                 .orElse(null);
+    }
+
+    private static QueryBuilder getQueryBuilder(final String field, final Date date) {
+        return QueryBuilders.rangeQuery(field).gte(date);
     }
 }
