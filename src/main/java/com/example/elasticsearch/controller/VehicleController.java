@@ -3,6 +3,7 @@ package com.example.elasticsearch.controller;
 import com.example.elasticsearch.document.Vehicle;
 import com.example.elasticsearch.search.SearchRequestDTO;
 import com.example.elasticsearch.service.VehicleService;
+import com.example.elasticsearch.service.help.VehicleDummyDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -14,15 +15,20 @@ import java.util.List;
 @RequestMapping("/api/vehicle")
 public class VehicleController {
     private final VehicleService service;
-
+    private final VehicleDummyDataService dummyDataService;
     @Autowired
-    public VehicleController(VehicleService service) { this.service = service; };
+    public VehicleController(VehicleService service, VehicleDummyDataService dummyDataService) {
+        this.service = service;
+        this.dummyDataService = dummyDataService;
+    };
 
     @PostMapping
     public void index(@RequestBody final Vehicle vehicle) {
         service.index(vehicle);
     }
 
+    @PostMapping("/insertdummydata")
+    public void insertDummyData() {dummyDataService.insertDummyData();}
     @GetMapping("/{id}")
     public Vehicle getById(@PathVariable final String id) {
         return service.getById(id);
@@ -39,5 +45,14 @@ public class VehicleController {
             @DateTimeFormat(pattern = "yyyy-MM-dd")
             final Date date) {
         return service.getAllVehiclesCreatedSince(date);
+    }
+
+    @PostMapping("/searchcreatedsince/{date}")
+    public List<Vehicle> searchCreatedSince(
+            @RequestBody final SearchRequestDTO dto,
+            @PathVariable
+            @DateTimeFormat(pattern = "yyyy-MM-dd")
+            final Date date) {
+        return service.searchCreatedSince(dto, date);
     }
 }

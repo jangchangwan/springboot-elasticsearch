@@ -53,6 +53,37 @@ public final class SearchUtil {
             return null;
         }
     }
+
+    public static SearchRequest buildSearchRequest(final String indexName,
+                                                   final SearchRequestDTO dto,
+                                                   final Date date) {
+        try {
+            final QueryBuilder searchQuery = getQueryBuilder(dto);
+            final QueryBuilder dateQuery = getQueryBuilder("created", date);
+
+            final BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                    .mustNot(searchQuery)
+                    .must(dateQuery);
+
+            SearchSourceBuilder builder = new SearchSourceBuilder()
+                    .postFilter(boolQuery);
+
+            if (dto.getSortBy() != null) {
+                builder = builder.sort(
+                        dto.getSortBy(),
+                        dto.getOrder() != null ? dto.getOrder() : SortOrder.ASC
+                );
+            }
+
+            final SearchRequest request = new SearchRequest(indexName);
+            request.source(builder);
+
+            return request;
+        } catch (final Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
     public static QueryBuilder getQueryBuilder(final SearchRequestDTO dto) {
         if (dto == null) {
             return null;
